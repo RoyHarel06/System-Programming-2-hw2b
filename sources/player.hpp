@@ -3,7 +3,7 @@
 #include "card.hpp"
 
 #include <string>
-#include <queue>
+#include <vector>
 using namespace std;
 
 namespace ariel
@@ -12,7 +12,7 @@ namespace ariel
     {
         private:
             string name;
-            queue<Card> hand;
+            vector<Card> hand;
             int number_of_cards_won;
             bool in_game;
 
@@ -27,10 +27,10 @@ namespace ariel
             int stacksize();
             int cardesTaken();
 
-            void takeCard(int x);
+            void takeCards(int card_pool);
 
-            Card playCardFromHand();
-            void addCardToHand(Card card);
+            Card& playCardFromHand();
+            void addCardToHand(const Card& card);
 
             void shuffleHand();
     };

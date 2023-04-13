@@ -1,31 +1,35 @@
 #include "game.hpp"
 
 #include <iostream>
-#include <random>
+#include <vector>
+#include <algorithm>
 
 namespace ariel
 {
-    Game::Game(Player player1, Player player2): player1(player1), player2(player2) {
-        if (player1.getName().empty())
+    Game::Game(Player& player1_, Player& player2_): player1(player1_), player2(player2_) {
+        if (this->player1.getName().empty())
             throw std::invalid_argument("Player 1 has no name.");
-        if (player2.getName().empty())
+        if (this->player2.getName().empty())
             throw std::invalid_argument("Player 2 has no name.");
 
-        if (player1.getName() == player2.getName())
-            throw std::invalid_argument("Same player.");
+        // according to test this should throw in play turn...
+        //if (player1.getName() == player2.getName())
+        //    throw std::invalid_argument("Same player.");
 
-        if (player1.stacksize() != 0 || player1.cardesTaken() != 0)
+        if (this->player1.stacksize() != 0 || this->player1.cardesTaken() != 0)
             throw std::invalid_argument("Player 1 has cards.");
-        if (player2.stacksize() != 0 || player2.cardesTaken() != 0)
+        if (this->player2.stacksize() != 0 || this->player2.cardesTaken() != 0)
             throw std::invalid_argument("Player 2 has cards.");
 
-        if (player1.isInGame())
+        if (this->player1.isInGame())
             throw std::invalid_argument("Player 1 is in a game!");
-        if (player2.isInGame())
+        if (this->player2.isInGame())
             throw std::invalid_argument("Player 2 is in a game!");
 
-        player1.joinGame();
-        player2.joinGame();
+        dealCards();
+
+        this->player1.joinGame();
+        this->player2.joinGame();
 
         this->turn = 0;
         this->draw_counter = 0;
@@ -36,42 +40,45 @@ namespace ariel
      * returns the number of turns played in the game so far.
      */
     int Game::getNumberOfTurns() {
-        return turn;
+        return this->turn;
     }
 
     /*
      * deals a pack of cards to the two players.
      */
     void Game::dealCards() {
-        random_device rd;
-        mt19937 gen(rd());
-        uniform_int_distribution<> dist(1, 2);
-
-        for (int value = 1; value <= 12; value++)
+        vector<Card> cards;
+        for (int value = 1; value <= 13; value++)
         {
             for(string suit: {"Hearts", "Spades", "Clubs", "Diamonds"})
             {
-                Card temp(value, suit);
-                if (dist(gen) == 1)
-                    player1.addCardToHand(temp);
-                else
-                    player2.addCardToHand(temp);
+                cards.push_back(Card(value, suit));
             }
         }
+        random_shuffle(cards.begin(), cards.end());
 
-        player1.shuffleHand();
-        player2.shuffleHand();
+        for (int i = 0; i < 26; i++)
+        {
+            this->player1.addCardToHand(cards.back());
+            cards.pop_back();
+            this->player2.addCardToHand(cards.back());
+            cards.pop_back();
+        }
+
+        this->player1.shuffleHand();
+        this->player2.shuffleHand();
     }
 
     /*
      * plays the next turn in the game and logs the results.
      */
     void Game::playTurn() {
+        // according to test this should throw here...
+        if (player1.getName() == player2.getName())
+            throw std::invalid_argument("Same player.");
+
         if (game_ended == true)
             throw std::logic_error("The game ended.");
-
-        if (turn == 0)
-            dealCards();
 
         if (player1.stacksize() == 0 || player2.stacksize() == 0)
             game_ended = true;
@@ -79,40 +86,60 @@ namespace ariel
         {
             turn++;
 
-            // Alice played 6 of Hearts Bob played 6 of Spades. Draw. Alice played 10 of Clubs Bob played 11 of Diamonds. Bob wins.
-            string log_entry = "";
+            string log_entry = war(0);
+            log.push(log_entry);
+        }
+    }
 
-            int cards_won = 0;
+    /*
+     * implements the main logic of the game and returns the log.
+     */
+    string Game::war(int cards_won) {
+        string log_entry = "";
 
-            Card player1_card = player1.playCardFromHand();
-            Card player2_card = player2.playCardFromHand();
+        Card player1_card = player1.playCardFromHand();
+        Card player2_card = player2.playCardFromHand();
 
-            log_entry += player1.getName() + " played " + to_string(player1_card.getValue()) + " of " + player1_card.getSuit() + " ";
-            log_entry += player2.getName() + " played " + to_string(player2_card.getValue()) + " of " + player2_card.getSuit() + ".";
+        log_entry += player1.getName() + " played " + to_string(player1_card.getValue()) + " of " + player1_card.getSuit() + " ";
+        log_entry += player2.getName() + " played " + to_string(player2_card.getValue()) + " of " + player2_card.getSuit() + ".";
 
-            if (player1_card.getValue() > player2_card.getValue()) {
-                player1.takeCard(cards_won + 2);
-                log_entry += " " + player1.getName() + " wins.";
+        if (player1_card.getValue() > player2_card.getValue()) {
+            player1.takeCards(cards_won + 2);
+            log_entry += " " + player1.getName() + " wins.";
+        }
+        else if (player1_card.getValue() < player2_card.getValue()) {
+            player2.takeCards(cards_won + 2);
+            log_entry += " " + player2.getName() + " wins.";
+        }
+        else {
+            draw_counter++;
+
+            log_entry += " Draw. ";
+
+            if (player1.stacksize() == 0) {
+                player1.takeCards(cards_won/2 + 1);
+                player2.takeCards(cards_won/2 + 1);
+
+                log_entry += "No more cards.";
             }
-            else if (player1_card.getValue() < player2_card.getValue()) {
-                player2.takeCard(cards_won + 2);
-                log_entry += " " + player2.getName() + " wins.";
-            }
-            else {
-                log_entry += " Draw. ";
-
-                cards_won += 2;
-
-                // TODO: check number of cards to see if can draw more, if not share the spoils
-                // TODO: make this logic into  a recursive func!
-
-                // facedown cards:
+            else if (player1.stacksize() == 1) {
                 player1.playCardFromHand();
                 player2.playCardFromHand();
 
-                cards_won += 2;
+                player1.takeCards(cards_won/2 + 2);
+                player2.takeCards(cards_won/2 + 2);
+
+                log_entry += "No more cards.";
+            }
+            else {
+                player1.playCardFromHand();
+                player2.playCardFromHand();
+
+                log_entry += war(cards_won + 4);
             }
         }
+
+        return log_entry;
     }
 
     /*
@@ -127,8 +154,6 @@ namespace ariel
     std::string Game::getWinner() {
         if (turn == 0)
             throw std::logic_error("The game hasn't started yet.");
-        else if (game_ended == false)
-            throw std::logic_error("The game hasn't ended yet.");
         
         else if (player1.stacksize() > player2.stacksize())
             return player1.getName();
@@ -139,7 +164,7 @@ namespace ariel
     }
 
     /*
-     * prints the name of the winning player.
+     * prints the name of the currently winning player.
      */
     void Game::printWiner() {
         cout << getWinner() << " won!\n";
@@ -189,12 +214,15 @@ namespace ariel
         if (turn == 0)
             throw logic_error("The game hasn't started yet.");
         else {
+            int total = player1.cardesTaken() + player2.cardesTaken();
+            total /= 2;
+
             cout << player1.getName() << "'s stats:\n";
-            cout << "Win rate: " << (player1.cardesTaken() / 26) * 100 << "%\n";
+            cout << "Win rate: " << (((double)player1.cardesTaken() / 2)/total) * 100 << "%\n";
             cout << "Cards won: " << player1.cardesTaken() << "\n\n";
 
             cout << player2.getName() << "'s stats:\n";
-            cout << "Win rate: " << (player2.cardesTaken() / 26) * 100 << "%\n";
+            cout << "Win rate: " << (((double)player2.cardesTaken() / 2)/total) * 100 << "%\n";
             cout << "Cards won: " << player2.cardesTaken() << "\n\n";
         
             cout << "Draw rate: " << ((double)draw_counter / turn) * 100 << "%\n";

@@ -1,32 +1,31 @@
 #include "player.hpp"
 
 #include <algorithm>
-#include <vector>
 
 namespace ariel
 {
 
     Player::Player(string name) {
-        name = name;
-        number_of_cards_won = 0;
-        in_game = false;
+        this->name = name;
+        this->number_of_cards_won = 0;
+        this->in_game = false;
     }
 
     /*
      * returns true if the player is in a game.
      */
     bool Player::isInGame() {
-        return in_game;
+        return this->in_game;
     }
 
     /*
      * sets in_game to true and returns true on success, if the player is in a game will return false.
      */
     bool Player::joinGame() {
-        if (in_game)
+        if (this->in_game)
             return false;
         
-        in_game = true;
+        this->in_game = true;
         return true;
     }
 
@@ -34,7 +33,7 @@ namespace ariel
      * returns the name of this player.
      */
     string Player::getName() {
-        return name;
+        return this->name;
     }
 
     /*
@@ -48,46 +47,36 @@ namespace ariel
      * prints the amount of cards this player has won. 
      */
     int Player::cardesTaken() {
-        return number_of_cards_won;
+        return this->number_of_cards_won;
     }
 
     /*
      * increases the number of cards won by x.
      */
-    void Player::takeCard(int x) {
-        number_of_cards_won += x;
+    void Player::takeCards(int card_pool) {
+        this->number_of_cards_won += card_pool;
     }
 
     /*
      * returns the top card from the player's hand.
      */
-    Card Player::playCardFromHand() {
-        Card ret = hand.front();
-        hand.pop();
+    Card& Player::playCardFromHand() {
+        Card& ret = this->hand.back();
+        this->hand.pop_back();
         return ret;
-    } 
+    }
 
     /*
      * adds a card to the player's hand.
      */
-    void Player::addCardToHand(Card card) {
-        hand.push(card);
+    void Player::addCardToHand(const Card& card) {
+        this->hand.push_back(card);
     }
 
     /*
      * shuffles the cards in the player's hand.
      */
     void Player::shuffleHand() {
-        vector<Card> cards_vector;
-        while (!hand.empty()) {
-            cards_vector.push_back(hand.front());
-            hand.pop();
-        }
-
-        random_shuffle(cards_vector.begin(), cards_vector.end());
-        
-        for (Card card: cards_vector) {
-            hand.push(card);
-        }
+        random_shuffle(this->hand.begin(), this->hand.end());
     }
 }
