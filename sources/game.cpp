@@ -155,9 +155,9 @@ namespace ariel
         if (turn == 0)
             throw std::logic_error("The game hasn't started yet.");
         
-        else if (player1.stacksize() > player2.stacksize())
+        else if (player1.cardesTaken() > player2.cardesTaken())
             return player1.getName();
-        else if (player1.stacksize() < player2.stacksize())
+        else if (player1.cardesTaken() < player2.cardesTaken())
             return player2.getName();
         else
             return player1.getName() + " and " + player2.getName();
