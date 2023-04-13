@@ -7,15 +7,34 @@ namespace ariel
 {
 
     Player::Player(string name) {
-        this->name = name;
+        name = name;
         number_of_cards_won = 0;
+        in_game = false;
+    }
+
+    /*
+     * returns true if the player is in a game.
+     */
+    bool Player::isInGame() {
+        return in_game;
+    }
+
+    /*
+     * sets in_game to true and returns true on success, if the player is in a game will return false.
+     */
+    bool Player::joinGame() {
+        if (in_game)
+            return false;
+        
+        in_game = true;
+        return true;
     }
 
     /*
      * returns the name of this player.
      */
     string Player::getName() {
-        return this->name;
+        return name;
     }
 
     /*
@@ -30,6 +49,13 @@ namespace ariel
      */
     int Player::cardesTaken() {
         return number_of_cards_won;
+    }
+
+    /*
+     * increases the number of cards won by x.
+     */
+    void Player::takeCard(int x) {
+        number_of_cards_won += x;
     }
 
     /*

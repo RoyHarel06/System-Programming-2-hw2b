@@ -3,6 +3,8 @@
 #include "player.hpp"
 #include <queue>
 
+using namespace std;
+
 namespace ariel
 {
     class Game
@@ -12,13 +14,15 @@ namespace ariel
             Player player2;
             int turn;
             int draw_counter;
-            queue<std::string> log;
+            queue<string> log;
             bool game_ended;
+
+            void dealCards();
             
         public:
             Game(Player player1, Player player2);
 
-            std::string getWinner();
+            string getWinner();
             
             int getNumberOfTurns();
             void playTurn();
