@@ -25,5 +25,7 @@ namespace ariel
 
             Card playCardFromHand();
             void addCardToHand(Card card);
+
+            void shuffleHand();
     };
 }
